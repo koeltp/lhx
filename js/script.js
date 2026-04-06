@@ -134,8 +134,38 @@ function initClearButton() {
     }
 }
 
+// 检查是否需要清空数据（每天21:40第一次访问）
+function checkAndClearData() {
+    const now = new Date();
+    const currentHour = now.getHours();
+    const currentMinute = now.getMinutes();
+    const currentDate = now.toDateString();
+    
+    // 获取上次访问日期
+    const lastVisitDate = localStorage.getItem('lastVisitDate');
+    
+    // 检查是否是21:40之后的第一次访问
+    if (currentHour > 21 || (currentHour === 21 && currentMinute >= 40)) {
+        if (lastVisitDate !== currentDate) {
+            // 清空选中的号码
+            try {
+                localStorage.removeItem('selectedNumbers');
+            } catch (error) {
+                console.error('清空本地存储失败:', error);
+            }
+            // 更新上次访问日期
+            try {
+                localStorage.setItem('lastVisitDate', currentDate);
+            } catch (error) {
+                console.error('保存访问日期失败:', error);
+            }
+        }
+    }
+}
+
 // 初始化
 function init() {
+    checkAndClearData();
     renderList();
     debugCheck();
     initClearButton();
