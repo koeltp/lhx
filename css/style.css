@@ -161,3 +161,37 @@ body {
 .element-土 {
     color: #daa520;
 }
+
+/* 加载中样式 */
+.loading-indicator {
+    text-align: center;
+    padding: 1rem;
+}
+
+/* 操作按钮容器 */
+.buttons-container {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 3rem;
+    margin-bottom: 50px;
+}
+
+/* 清空按钮样式 */
+.clear-btn {
+    padding: 0.6rem 1.2rem;
+    border: none;
+    border-radius: 0.5rem;
+    background: #e34d2b;
+    color: #fff5e8;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 0 #8a2a10;
+}
+
+.clear-btn:hover {
+    background: #c63f25;
+    transform: translateY(-2px);
+    box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15);
+}
