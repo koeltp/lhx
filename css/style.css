@@ -1,0 +1,104 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    background: linear-gradient(145deg, #1a472a 0%, #0e2a1a 100%);
+    font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
+    padding: 1rem;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 600px;
+    margin: 0 auto;
+    background: rgba(255, 250, 235, 0.96);
+    border-radius: 2rem;
+    box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    padding: 1.5rem 1.2rem;
+}
+
+/* 简洁的行列表 */
+.zodiac-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+}
+
+.zodiac-row {
+    background: #fffef7;
+    border-radius: 1.2rem;
+    padding: 0.7rem 1rem;
+    border: 1px solid #f3cd81;
+    transition: 0.1s;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+.zodiac-name {
+    font-weight: 800;
+    color: #4e2a12;
+    background: #ffefcf;
+    display: inline-block;
+    padding: 0.1rem 0.8rem;
+    border-radius: 2rem;
+    margin-right: 0.8rem;
+    font-size: 1.1rem;
+}
+
+.numbers-area {
+    display: inline;
+}
+
+.number-badge {
+    display: inline-block;
+    padding: 0.5rem 0.5rem;
+    margin: 0.2rem 0.2rem;
+    border-radius: 50%;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 1.1rem;
+    transition: 0.1s;
+    border: 1px solid rgba(255,255,200,0.6);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    width: 2.2rem;
+    height: 2.2rem;
+    text-align: center;
+    line-height: 1.2;
+}
+
+/* 波色样式 - 类名与实际颜色一致 */
+.badge-red {
+    background: #e34d2b;
+    color: #fff5e8;
+    text-shadow: 0 1px 0 #8a2a10;
+    border-color: #ffbc8c;
+}
+.badge-green {
+    background: #3c9e4c;   /* 真正的绿色背景 */
+    color: #f9f7cf;
+    text-shadow: 0 1px 0 #1a4a1a;
+    border-color: #b7e3a0;
+}
+.badge-blue {
+    background: #2c6e9e;   /* 真正的蓝色背景 */
+    color: white;
+    text-shadow: 0 1px 0 #0a2f4d;
+    border-color: #b3d9ff;
+}
+.badge-black {
+    background: #333333;
+    color: white;
+    text-shadow: 0 1px 0 #000000;
+    border-color: #666666;
+}
+
+@media (max-width: 480px) {
+    .container { padding: 1rem; }
+    .zodiac-row { padding: 0.5rem 0.8rem; }
+    .number-badge { font-size: 0.8rem; padding: 0.3rem 0.3rem; width: 1.8rem; height: 1.8rem; }
+    .zodiac-name { font-size: 1rem; }
+}
