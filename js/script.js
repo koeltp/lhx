@@ -1,6 +1,22 @@
 // 固定生肖顺序（马、蛇、龙、兔、虎、牛、鼠、猪、狗、鸡、猴、羊）
 const CUSTOM_ZODIAC_ORDER = ["马", "蛇", "龙", "兔", "虎", "牛", "鼠", "猪", "狗", "鸡", "猴", "羊"];
 
+// 生肖对应地支
+const ZODIAC_TO_EARTHLY_BRANCH = {
+    "马": "午",
+    "蛇": "巳",
+    "龙": "辰",
+    "兔": "卯",
+    "虎": "寅",
+    "牛": "丑",
+    "鼠": "子",
+    "猪": "亥",
+    "狗": "戌",
+    "鸡": "酉",
+    "猴": "申",
+    "羊": "未"
+};
+
 // 波色定义（原始标准）
 const redSet = new Set([1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);      // 红波保持不变
 const blueSet = new Set([3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48]);      // 原绿波 → 现在应显示为蓝色背景（所以用 badge-blue）
@@ -33,6 +49,28 @@ function generateZodiacNumbers() {
 }
 
 const zodiacNumbers = generateZodiacNumbers();
+
+// 五行映射
+const FIVE_ELEMENTS = {
+    '金': [4, 5, 12, 13, 26, 27, 34, 35, 42, 43],
+    '木': [8, 9, 16, 17, 24, 25, 38, 39, 46, 47],
+    '水': [1, 14, 15, 22, 23, 30, 31, 44, 45],
+    '火': [2, 3, 10, 11, 18, 19, 32, 33, 40, 41, 48, 49],
+    '土': [6, 7, 20, 21, 28, 29, 36, 37]
+};
+
+// 生成号码到五行的映射
+const numberToElement = new Map();
+for (const [element, numbers] of Object.entries(FIVE_ELEMENTS)) {
+    for (const num of numbers) {
+        numberToElement.set(num, element);
+    }
+}
+
+// 获取号码的五行属性
+function getElementForNumber(num) {
+    return numberToElement.get(num) || '';
+}
 
 // 从本地存储获取选中的号码
 function getSelectedNumbersFromStorage() {
@@ -74,19 +112,40 @@ function renderList() {
         const isStarter = (zodiac === "马");
         const starterBadge = '';
         
-        // 生成带波色背景的号码标签
+        // 检查该生肖是否有选中的号码
+        const hasSelectedNumbers = numbers.some(num => selectedNumbers.includes(num));
+        const zodiacNameClass = hasSelectedNumbers ? 'zodiac-name zodiac-name-red' : 'zodiac-name';
+        
+        // 生成带波色背景的号码标签和五行
         let numbersHtml = '';
         for (let num of numbers) {
             const badgeClass = getNumberBadgeClass(num);
             const isSelected = selectedNumbers.includes(num);
             const finalClass = isSelected ? `${badgeClass} badge-black` : badgeClass;
-            numbersHtml += `<span class="number-badge ${finalClass}" data-num="${num}">${num}</span>`;
+            const element = getElementForNumber(num);
+            const elementClass = `element-${element}`;
+            numbersHtml += `
+                <div class="number-element-pair">
+                    <span class="number-badge ${finalClass}" data-num="${num}">${num}</span>
+                    <span class="element-label ${elementClass}">${element}</span>
+                </div>
+            `;
         }
         
+        const branch = ZODIAC_TO_EARTHLY_BRANCH[zodiac];
         html += `
             <div class="zodiac-row">
-                <span class="zodiac-name">${zodiac}${starterBadge}</span>
-                <span class="numbers-area">${numbersHtml}</span>
+                <div class="zodiac-info">
+                    <div class="zodiac-name-container">
+                        <span class="${zodiacNameClass}">${zodiac}${starterBadge}</span>
+                    </div>
+                    <div class="zodiac-branch-container">
+                        <span class="zodiac-branch">${branch}</span>
+                    </div>
+                </div>
+                <div class="numbers-elements-container">
+                    ${numbersHtml}
+                </div>
             </div>
         `;
     }
@@ -98,6 +157,8 @@ function renderList() {
         badge.addEventListener('click', function() {
             this.classList.toggle('badge-black');
             saveSelectedNumbersToStorage();
+            // 重新渲染以更新生肖名称颜色
+            renderList();
         });
     });
 }
