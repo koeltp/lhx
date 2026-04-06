@@ -102,17 +102,6 @@ function renderList() {
     });
 }
 
-// 控制台验证关键号码波色
-function debugCheck() {
-    console.log("=== 类名已修正：badge-green=绿色，badge-blue=蓝色 ===");
-    console.log("25号(原绿波) → 应显示蓝色背景，实际class:", getNumberBadgeClass(25));
-    console.log("37号(原绿波) → 应显示蓝色背景，实际class:", getNumberBadgeClass(37));
-    console.log("49号(原蓝波) → 应显示绿色背景，实际class:", getNumberBadgeClass(49));
-    console.log("5号(原蓝波) → 应显示绿色背景，实际class:", getNumberBadgeClass(5));
-    console.log("马号码列表:", zodiacNumbers.get("马").join(", "));
-    console.log("蛇号码列表:", zodiacNumbers.get("蛇").join(", "));
-}
-
 // 清空选择功能
 function initClearButton() {
     const clearBtn = document.getElementById('clearBtn');
@@ -167,7 +156,6 @@ function checkAndClearData() {
 function init() {
     checkAndClearData();
     renderList();
-    debugCheck();
     initClearButton();
 }
 
