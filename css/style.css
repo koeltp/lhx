@@ -8,18 +8,19 @@ body {
     background: #ffffff;
     font-family: 'Segoe UI', 'PingFang SC', Roboto, 'Noto Sans', system-ui, -apple-system, 'Microsoft YaHei', sans-serif;
     min-height: 100vh;
-    max-width: 600px;
-    margin: 0 auto;
+    margin: 0;
+    padding: 1rem;
+    overflow-x: auto;
 }
 
 /* 简洁的行列表 */
 .zodiac-list {
     border-radius: 1rem;
-    overflow: hidden;
-    padding: 0.5rem;
+    padding: 1.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
+    min-width: 100%;
 }
 
 .zodiac-row {
@@ -67,8 +68,6 @@ body {
     flex: 1;
     display: flex;
     white-space: nowrap;
-    overflow-x: auto;
-    padding-bottom: 0.5rem;
 }
 
 .number-element-pair {
