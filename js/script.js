@@ -92,6 +92,9 @@ function saveSelectedNumbersToStorage() {
     });
     try {
         localStorage.setItem('selectedNumbers', JSON.stringify(selectedNumbers));
+        // 更新上次访问时间
+        const now = new Date();
+        localStorage.setItem('lastVisitDate', formatDateTime(now));
     } catch (error) {
         console.error('保存本地存储失败:', error);
     }
@@ -184,31 +187,78 @@ function initClearButton() {
     }
 }
 
+// 格式化日期为 yyyyMMdd HH:mm:ss 格式
+function formatDateTime(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    const hours = String(date.getHours()).padStart(2, '0');
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const seconds = String(date.getSeconds()).padStart(2, '0');
+    return `${year}${month}${day} ${hours}:${minutes}:${seconds}`;
+}
+
+// 解析 yyyyMMdd HH:mm:ss 格式的日期字符串
+function parseDateTime(dateTimeStr) {
+    if (!dateTimeStr) return null;
+    const parts = dateTimeStr.split(' ');
+    if (parts.length !== 2) return null;
+    const datePart = parts[0];
+    const timePart = parts[1];
+    if (datePart.length !== 8 || timePart.length !== 8) return null;
+    const year = parseInt(datePart.substring(0, 4));
+    const month = parseInt(datePart.substring(4, 6)) - 1;
+    const day = parseInt(datePart.substring(6, 8));
+    const timeParts = timePart.split(':');
+    if (timeParts.length !== 3) return null;
+    const hours = parseInt(timeParts[0]);
+    const minutes = parseInt(timeParts[1]);
+    const seconds = parseInt(timeParts[2]);
+    return new Date(year, month, day, hours, minutes, seconds);
+}
+
 // 检查是否需要清空数据（每天21:40第一次访问）
 function checkAndClearData() {
     const now = new Date();
-    const currentHour = now.getHours();
-    const currentMinute = now.getMinutes();
-    const currentDate = now.toDateString();
     
-    // 获取上次访问日期
-    const lastVisitDate = localStorage.getItem('lastVisitDate');
+    // 计算今天的21:40时间点
+    const today2140 = new Date(now);
+    today2140.setHours(21, 40, 0, 0);
     
-    // 检查是否是21:40之后的第一次访问
-    if (currentHour > 21 || (currentHour === 21 && currentMinute >= 40)) {
-        if (lastVisitDate !== currentDate) {
-            // 清空选中的号码
-            try {
-                localStorage.removeItem('selectedNumbers');
-            } catch (error) {
-                console.error('清空本地存储失败:', error);
-            }
-            // 更新上次访问日期
-            try {
-                localStorage.setItem('lastVisitDate', currentDate);
-            } catch (error) {
-                console.error('保存访问日期失败:', error);
-            }
+    // 根据当前时间确定有效时间范围
+    let startTime, endTime;
+    if (now < today2140) {
+        // 今天还没过21:40，有效范围是昨天21:40到今天21:40
+        startTime = new Date(now);
+        startTime.setDate(startTime.getDate() - 1);
+        startTime.setHours(21, 40, 0, 0);
+        endTime = today2140;
+    } else {
+        // 今天已过21:40，有效范围是今天21:40到明天21:40
+        startTime = today2140;
+        endTime = new Date(now);
+        endTime.setDate(endTime.getDate() + 1);
+        endTime.setHours(21, 40, 0, 0);
+    }
+    
+    // 获取上次访问时间
+    const lastVisitDateStr = localStorage.getItem('lastVisitDate');
+    const lastVisitDate = parseDateTime(lastVisitDateStr);
+    
+    // 检查是否需要清空数据：
+    // 如果上次访问时间不在有效时间范围内
+    if (!lastVisitDate || lastVisitDate < startTime || lastVisitDate >= endTime) {
+        // 清空选中的号码
+        try {
+            localStorage.removeItem('selectedNumbers');
+        } catch (error) {
+            console.error('清空本地存储失败:', error);
+        }
+        // 清空后更新访问时间
+        try {
+            localStorage.setItem('lastVisitDate', formatDateTime(now));
+        } catch (error) {
+            console.error('保存访问日期失败:', error);
         }
     }
 }
