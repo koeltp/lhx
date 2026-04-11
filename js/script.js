@@ -1,6 +1,12 @@
 // 固定生肖顺序（马、蛇、龙、兔、虎、牛、鼠、猪、狗、鸡、猴、羊）
 const CUSTOM_ZODIAC_ORDER = ["马", "蛇", "龙", "兔", "虎", "牛", "鼠", "猪", "狗", "鸡", "猴", "羊"];
 
+// 配置：清空数据的时间点（小时:分钟）
+const CLEAR_TIME = {
+    hour: 21,
+    minute: 38
+};
+
 // 生肖对应地支
 const ZODIAC_TO_EARTHLY_BRANCH = {
     "马": "午",
@@ -217,28 +223,28 @@ function parseDateTime(dateTimeStr) {
     return new Date(year, month, day, hours, minutes, seconds);
 }
 
-// 检查是否需要清空数据（每天21:40第一次访问）
+// 检查是否需要清空数据（每天指定时间第一次访问）
 function checkAndClearData() {
     const now = new Date();
     
-    // 计算今天的21:40时间点
-    const today2140 = new Date(now);
-    today2140.setHours(21, 40, 0, 0);
+    // 计算今天的指定时间点
+    const todayClearTime = new Date(now);
+    todayClearTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
     
     // 根据当前时间确定有效时间范围
     let startTime, endTime;
-    if (now < today2140) {
-        // 今天还没过21:40，有效范围是昨天21:40到今天21:40
+    if (now < todayClearTime) {
+        // 今天还没过指定时间，有效范围是昨天指定时间到今天指定时间
         startTime = new Date(now);
         startTime.setDate(startTime.getDate() - 1);
-        startTime.setHours(21, 40, 0, 0);
-        endTime = today2140;
+        startTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
+        endTime = todayClearTime;
     } else {
-        // 今天已过21:40，有效范围是今天21:40到明天21:40
-        startTime = today2140;
+        // 今天已过指定时间，有效范围是今天指定时间到明天指定时间
+        startTime = todayClearTime;
         endTime = new Date(now);
         endTime.setDate(endTime.getDate() + 1);
-        endTime.setHours(21, 40, 0, 0);
+        endTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
     }
     
     // 获取上次访问时间
