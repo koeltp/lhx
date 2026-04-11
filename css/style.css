@@ -103,6 +103,7 @@ body {
     height: 3rem;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     border: 1px solid white;
+    cursor: pointer;
 }
 
 .number-badge:hover {
@@ -117,12 +118,12 @@ body {
     text-shadow: 0 1px 0 #8a2a10;
 }
 .badge-green {
-    background: #3c9e4c;   /* 真正的绿色背景 */
+    background: #3c9e4c;
     color: #f9f7cf;
     text-shadow: 0 1px 0 #1a4a1a;
 }
 .badge-blue {
-    background: #2c6e9e;   /* 真正的蓝色背景 */
+    background: #2c6e9e;
     color: white;
     text-shadow: 0 1px 0 #0a2f4d;
 }

@@ -1,151 +1,201 @@
 // 使用IIFE封装代码，避免全局污染
 (function() {
-    // 配置：清空数据的时间点（小时:分钟）
-    const CLEAR_TIME = {
-        hour: 22,
-        minute: 9
+    // ==================== 常量配置 ====================
+    const STORAGE_KEYS = {
+        SELECTED_NUMBERS: 'selectedNumbers',
+        DATA_CYCLE_DATE: 'dataCycleDate'   // 记录当前选中数据所属的周期起始时间
     };
 
-    // 固定生肖顺序（马、蛇、龙、兔、虎、牛、鼠、猪、狗、鸡、猴、羊）及其对应地支
+    const CLEAR_TIME = { hour: 21, minute: 38 };
+
     const ZODIAC_DATA = [
-        { name: "马", branch: "午" },
-        { name: "蛇", branch: "巳" },
-        { name: "龙", branch: "辰" },
-        { name: "兔", branch: "卯" },
-        { name: "虎", branch: "寅" },
-        { name: "牛", branch: "丑" },
-        { name: "鼠", branch: "子" },
-        { name: "猪", branch: "亥" },
-        { name: "狗", branch: "戌" },
-        { name: "鸡", branch: "酉" },
-        { name: "猴", branch: "申" },
-        { name: "羊", branch: "未" }
+        { name: "马", branch: "午" }, { name: "蛇", branch: "巳" },
+        { name: "龙", branch: "辰" }, { name: "兔", branch: "卯" },
+        { name: "虎", branch: "寅" }, { name: "牛", branch: "丑" },
+        { name: "鼠", branch: "子" }, { name: "猪", branch: "亥" },
+        { name: "狗", branch: "戌" }, { name: "鸡", branch: "酉" },
+        { name: "猴", branch: "申" }, { name: "羊", branch: "未" }
     ];
+    const ZODIAC_NAMES = ZODIAC_DATA.map(item => item.name);
 
-    // 提取生肖名称数组，用于其他需要的地方
-    const CUSTOM_ZODIAC_ORDER = ZODIAC_DATA.map(item => item.name);
+    const redSet = new Set([1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);
+    const blueSet = new Set([3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48]);
+    const greenSet = new Set([5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49]);
 
-    // 波色定义（原始标准）
-    const redSet = new Set([1,2,7,8,12,13,18,19,23,24,29,30,34,35,40,45,46]);      // 红波保持不变
-    const blueSet = new Set([3,4,9,10,14,15,20,25,26,31,36,37,41,42,47,48]);      // 蓝波
-    const greenSet = new Set([5,6,11,16,17,21,22,27,28,32,33,38,39,43,44,49]);     // 绿波
+    const FIVE_ELEMENTS = {
+        '金': [4,5,12,13,26,27,34,35,42,43],
+        '木': [8,9,16,17,24,25,38,39,46,47],
+        '水': [1,14,15,22,23,30,31,44,45],
+        '火': [2,3,10,11,18,19,32,33,40,41,48,49],
+        '土': [6,7,20,21,28,29,36,37]
+    };
 
-    // 生成生肖->号码映射（固定顺序循环1-49）
+    let zodiacNumbers = null;
+    let numberToElement = null;
+    let currentSelected = [];
+    let autoClearTimer = null;
+
+    // ------------------- 工具函数 -------------------
     function generateZodiacNumbers() {
         const map = new Map();
-        for (const z of CUSTOM_ZODIAC_ORDER) {
-            map.set(z, []);
-        }
+        for (const z of ZODIAC_NAMES) map.set(z, []);
         for (let num = 1; num <= 49; num++) {
             const idx = (num - 1) % 12;
-            const zodiac = CUSTOM_ZODIAC_ORDER[idx];
-            map.get(zodiac).push(num);
+            map.get(ZODIAC_NAMES[idx]).push(num);
         }
-        // 升序
-        for (const z of CUSTOM_ZODIAC_ORDER) {
-            map.get(z).sort((a,b) => a - b);
+        for (const z of ZODIAC_NAMES) map.get(z).sort((a,b)=>a-b);
+        return map;
+    }
+
+    function generateNumberToElement() {
+        const map = new Map();
+        for (const [element, numbers] of Object.entries(FIVE_ELEMENTS)) {
+            for (const num of numbers) map.set(num, element);
         }
         return map;
     }
 
-    const zodiacNumbers = generateZodiacNumbers();
-
-    // 五行映射
-    const FIVE_ELEMENTS = {
-        '金': [4, 5, 12, 13, 26, 27, 34, 35, 42, 43],
-        '木': [8, 9, 16, 17, 24, 25, 38, 39, 46, 47],
-        '水': [1, 14, 15, 22, 23, 30, 31, 44, 45],
-        '火': [2, 3, 10, 11, 18, 19, 32, 33, 40, 41, 48, 49],
-        '土': [6, 7, 20, 21, 28, 29, 36, 37]
-    };
-
-    // 生成号码到五行的映射
-    const numberToElement = new Map();
-    for (const [element, numbers] of Object.entries(FIVE_ELEMENTS)) {
-        for (const num of numbers) {
-            numberToElement.set(num, element);
-        }
-    }
-
-    // 获取波色 CSS 类（类名与实际颜色一致）
     function getNumberBadgeClass(num) {
         if (redSet.has(num)) return 'badge-red';
-        if (blueSet.has(num)) return 'badge-blue';   // 蓝波 → 显示蓝色（badge-blue 现在是真正的蓝色）
-        if (greenSet.has(num)) return 'badge-green'; // 绿波 → 显示绿色（badge-green 现在是真正的绿色）
+        if (blueSet.has(num)) return 'badge-blue';
+        if (greenSet.has(num)) return 'badge-green';
         return 'badge-red';
     }
 
-    // 获取号码的五行属性
     function getElementForNumber(num) {
         return numberToElement.get(num) || '';
     }
 
-    // 从本地存储获取选中的号码
-    function getSelectedNumbersFromStorage() {
+    function loadSelectedFromStorage() {
         try {
-            const stored = localStorage.getItem('selectedNumbers');
-            return stored ? JSON.parse(stored) : [];
-        } catch (error) {
-            console.error('读取本地存储失败:', error);
-            return [];
+            const stored = localStorage.getItem(STORAGE_KEYS.SELECTED_NUMBERS);
+            currentSelected = stored ? JSON.parse(stored) : [];
+        } catch(e) {
+            console.error(e);
+            currentSelected = [];
+        }
+        return currentSelected;
+    }
+
+    function saveSelectedToStorage() {
+        try {
+            localStorage.setItem(STORAGE_KEYS.SELECTED_NUMBERS, JSON.stringify(currentSelected));
+        } catch(e) {
+            console.error(e);
         }
     }
 
-    // 格式化日期为 yyyyMMdd HH:mm:ss 格式
+    function saveDataCycleDate(date) {
+        try {
+            localStorage.setItem(STORAGE_KEYS.DATA_CYCLE_DATE, formatDateTime(date));
+        } catch(e) {}
+    }
+
+    function loadDataCycleDate() {
+        try {
+            const str = localStorage.getItem(STORAGE_KEYS.DATA_CYCLE_DATE);
+            return str ? parseDateTime(str) : null;
+        } catch(e) {
+            return null;
+        }
+    }
+
     function formatDateTime(date) {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        const hours = String(date.getHours()).padStart(2, '0');
-        const minutes = String(date.getMinutes()).padStart(2, '0');
-        const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${year}${month}${day} ${hours}:${minutes}:${seconds}`;
+        const y = date.getFullYear();
+        const m = String(date.getMonth()+1).padStart(2,'0');
+        const d = String(date.getDate()).padStart(2,'0');
+        const h = String(date.getHours()).padStart(2,'0');
+        const min = String(date.getMinutes()).padStart(2,'0');
+        const s = String(date.getSeconds()).padStart(2,'0');
+        return `${y}${m}${d} ${h}:${min}:${s}`;
     }
 
-    // 保存选中的号码到本地存储
-    function saveSelectedNumbersToStorage() {
-        const selectedNumbers = [];
-        const blackBadges = document.querySelectorAll('.number-badge.badge-black');
-        blackBadges.forEach(badge => {
-            selectedNumbers.push(parseInt(badge.dataset.num));
-        });
-        try {
-            localStorage.setItem('selectedNumbers', JSON.stringify(selectedNumbers));
-            // 更新上次访问时间
-            const now = new Date();
-            localStorage.setItem('lastVisitDate', formatDateTime(now));
-        } catch (error) {
-            console.error('保存本地存储失败:', error);
+    function parseDateTime(str) {
+        if (!str) return null;
+        const match = str.match(/^(\d{4})(\d{2})(\d{2}) (\d{2}):(\d{2}):(\d{2})$/);
+        if (!match) return null;
+        const [_, y, m, d, h, min, s] = match;
+        return new Date(parseInt(y), parseInt(m)-1, parseInt(d), parseInt(h), parseInt(min), parseInt(s));
+    }
+
+    function getClearTimeOfDate(date) {
+        const clearDate = new Date(date);
+        clearDate.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
+        return clearDate;
+    }
+
+    function getCurrentCycleStart(now) {
+        const todayClear = getClearTimeOfDate(now);
+        if (now >= todayClear) return todayClear;
+        const yesterdayClear = new Date(todayClear);
+        yesterdayClear.setDate(yesterdayClear.getDate() - 1);
+        return yesterdayClear;
+    }
+
+    // 检查并清空过期数据（基于数据所属周期）
+    function checkAndClearData() {
+        const now = new Date();
+        const currentCycleStart = getCurrentCycleStart(now);
+        const storedCycle = loadDataCycleDate();
+        let needClear = false;
+        if (storedCycle && storedCycle < currentCycleStart) {
+            needClear = true;
         }
+        if (needClear) {
+            currentSelected = [];
+            saveSelectedToStorage();
+            localStorage.removeItem(STORAGE_KEYS.DATA_CYCLE_DATE);
+            renderList();
+        }
+        return needClear;
     }
 
-    // 渲染简洁行列表
+    // 当用户主动选中号码时，更新数据所属周期为当前周期
+    function updateDataCycleToCurrent() {
+        const now = new Date();
+        const currentCycleStart = getCurrentCycleStart(now);
+        saveDataCycleDate(currentCycleStart);
+    }
+
+    // 定时器：每天22:32自动清空
+    function scheduleAutoClear() {
+        if (autoClearTimer) clearTimeout(autoClearTimer);
+        const now = new Date();
+        let nextClear = getClearTimeOfDate(now);
+        if (now >= nextClear) nextClear.setDate(nextClear.getDate() + 1);
+        const delay = nextClear - now;
+        autoClearTimer = setTimeout(() => {
+            checkAndClearData();
+            scheduleAutoClear();
+        }, delay);
+    }
+
+    function updateZodiacNameColor(zodiacName) {
+        const row = document.querySelector(`.zodiac-row[data-zodiac="${zodiacName}"]`);
+        if (!row) return;
+        const nameSpan = row.querySelector('.zodiac-name');
+        const numbers = zodiacNumbers.get(zodiacName);
+        const hasSelected = numbers.some(num => currentSelected.includes(num));
+        if (hasSelected) nameSpan.classList.add('zodiac-name-red');
+        else nameSpan.classList.remove('zodiac-name-red');
+    }
+
     function renderList() {
         const container = document.getElementById('zodiacListContainer');
         if (!container) return;
-        
-        // 获取本地存储的选中号码
-        const selectedNumbers = getSelectedNumbersFromStorage();
-        
         let html = '';
         for (let i = 0; i < ZODIAC_DATA.length; i++) {
             const { name: zodiac, branch } = ZODIAC_DATA[i];
             const numbers = zodiacNumbers.get(zodiac);
-            const isStarter = (zodiac === "马");
-            const starterBadge = '';
-            
-            // 检查该生肖是否有选中的号码
-            const hasSelectedNumbers = numbers.some(num => selectedNumbers.includes(num));
-            const zodiacNameClass = hasSelectedNumbers ? 'zodiac-name zodiac-name-red' : 'zodiac-name';
-            
-            // 生成带波色背景的号码标签和五行
+            const hasSelected = numbers.some(num => currentSelected.includes(num));
+            const zodiacClass = hasSelected ? 'zodiac-name zodiac-name-red' : 'zodiac-name';
             let numbersHtml = '';
             for (let num of numbers) {
                 const badgeClass = getNumberBadgeClass(num);
-                const isSelected = selectedNumbers.includes(num);
+                const isSelected = currentSelected.includes(num);
                 const finalClass = isSelected ? `${badgeClass} badge-black` : badgeClass;
                 const element = getElementForNumber(num);
-                const elementClass = `element-${element}`;
+                const elementClass = element ? `element-${element}` : '';
                 numbersHtml += `
                     <div class="number-element-pair">
                         <span class="number-badge ${finalClass}" data-num="${num}">${num}</span>
@@ -153,135 +203,62 @@
                     </div>
                 `;
             }
-            
             html += `
-                <div class="zodiac-row">
+                <div class="zodiac-row" data-zodiac="${zodiac}">
                     <div class="zodiac-info">
-                        <div class="zodiac-name-container">
-                            <span class="${zodiacNameClass}">${zodiac}${starterBadge}</span>
-                        </div>
-                        <div class="zodiac-branch-container">
-                            <span class="zodiac-branch">${branch}</span>
-                        </div>
+                        <div class="zodiac-name-container"><span class="${zodiacClass}">${zodiac}</span></div>
+                        <div class="zodiac-branch-container"><span class="zodiac-branch">${branch}</span></div>
                     </div>
-                    <div class="numbers-elements-container">
-                        ${numbersHtml}
-                    </div>
+                    <div class="numbers-elements-container">${numbersHtml}</div>
                 </div>
             `;
         }
         container.innerHTML = html;
-        
-        // 添加点击事件监听器
-        const numberBadges = document.querySelectorAll('.number-badge');
-        numberBadges.forEach(badge => {
-            badge.addEventListener('click', function() {
-                this.classList.toggle('badge-black');
-                saveSelectedNumbersToStorage();
-                // 重新渲染以更新生肖名称颜色
-                renderList();
-            });
+    }
+
+    function initEventDelegate() {
+        const container = document.getElementById('zodiacListContainer');
+        if (!container) return;
+        container.addEventListener('click', (e) => {
+            const badge = e.target.closest('.number-badge');
+            if (!badge) return;
+            const num = parseInt(badge.dataset.num);
+            const idx = currentSelected.indexOf(num);
+            if (idx === -1) currentSelected.push(num);
+            else currentSelected.splice(idx, 1);
+            saveSelectedToStorage();
+            updateDataCycleToCurrent();   // 数据变化，更新所属周期
+            badge.classList.toggle('badge-black');
+            let targetZodiac = null;
+            for (const [zodiac, numbers] of zodiacNumbers) {
+                if (numbers.includes(num)) { targetZodiac = zodiac; break; }
+            }
+            if (targetZodiac) updateZodiacNameColor(targetZodiac);
         });
     }
 
-    // 清空选择功能
     function initClearButton() {
-        const clearBtn = document.getElementById('clearBtn');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', function() {
-                // 移除所有黑色标记
-                const allBadges = document.querySelectorAll('.number-badge');
-                allBadges.forEach(badge => {
-                    badge.classList.remove('badge-black');
-                });
-                
-                // 清空本地存储
-                try {
-                    localStorage.removeItem('selectedNumbers');
-                } catch (error) {
-                    console.error('清空本地存储失败:', error);
-                }
-            });
-        }
+        const btn = document.getElementById('clearBtn');
+        if (!btn) return;
+        btn.addEventListener('click', () => {
+            currentSelected = [];
+            saveSelectedToStorage();
+            localStorage.removeItem(STORAGE_KEYS.DATA_CYCLE_DATE);
+            renderList();
+        });
     }
 
-    // 解析 yyyyMMdd HH:mm:ss 格式的日期字符串
-    function parseDateTime(dateTimeStr) {
-        if (!dateTimeStr) return null;
-        const parts = dateTimeStr.split(' ');
-        if (parts.length !== 2) return null;
-        const datePart = parts[0];
-        const timePart = parts[1];
-        if (datePart.length !== 8 || timePart.length !== 8) return null;
-        const year = parseInt(datePart.substring(0, 4));
-        const month = parseInt(datePart.substring(4, 6)) - 1;
-        const day = parseInt(datePart.substring(6, 8));
-        const timeParts = timePart.split(':');
-        if (timeParts.length !== 3) return null;
-        const hours = parseInt(timeParts[0]);
-        const minutes = parseInt(timeParts[1]);
-        const seconds = parseInt(timeParts[2]);
-        return new Date(year, month, day, hours, minutes, seconds);
-    }
-
-    // 检查是否需要清空数据（每天指定时间第一次访问）
-    function checkAndClearData() {
-        const now = new Date();
-        // 计算今天的指定时间点
-        const todayClearTime = new Date(now);
-        todayClearTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
-        
-        // 根据当前时间确定有效时间范围
-        let startTime, endTime;
-        if (now < todayClearTime) {
-            // 今天还没过指定时间，有效范围是昨天指定时间到今天指定时间
-            startTime = new Date(now);
-            startTime.setDate(startTime.getDate() - 1);
-            startTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
-            endTime = todayClearTime;
-        } else {
-            // 今天已过指定时间，有效范围是今天指定时间到明天指定时间
-            startTime = todayClearTime;
-            endTime = new Date(now);
-            endTime.setDate(endTime.getDate() + 1);
-            endTime.setHours(CLEAR_TIME.hour, CLEAR_TIME.minute, 0, 0);
-        }
-        
-        // 获取上次访问时间
-        const lastVisitDateStr = localStorage.getItem('lastVisitDate');
-        const lastVisitDate = parseDateTime(lastVisitDateStr);
-        
-        // 检查是否需要清空数据：
-        // 如果上次访问时间不在有效时间范围内
-        if (!lastVisitDate || lastVisitDate < startTime || lastVisitDate >= endTime) {
-            // 清空选中的号码
-            try {
-                localStorage.removeItem('selectedNumbers');
-                // 清空后重新渲染页面
-                renderList();
-            } catch (error) {
-                console.error('清空本地存储失败:', error);
-            }
-            // 清空后更新访问时间
-            try {
-                localStorage.setItem('lastVisitDate', formatDateTime(now));
-            } catch (error) {
-                console.error('保存访问日期失败:', error);
-            }
-        }
-    }
-
-    // 初始化
     function init() {
-        checkAndClearData();
+        zodiacNumbers = generateZodiacNumbers();
+        numberToElement = generateNumberToElement();
+        loadSelectedFromStorage();
+        checkAndClearData();   // 页面加载时检查周期，过期则清空
         renderList();
+        initEventDelegate();
         initClearButton();
-        
-        // 设置定时检查，每1分钟检查一次
-        setInterval(checkAndClearData, 60000);
+        scheduleAutoClear();   // 启动每日22:32自动清空调度
     }
 
-    // 页面加载完成后初始化
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', init);
     } else {
