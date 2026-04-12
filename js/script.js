@@ -6,7 +6,7 @@
         DATA_CYCLE_DATE: 'dataCycleDate'   // 记录当前选中数据所属的周期起始时间
     };
 
-    const CLEAR_TIME = { hour: 10, minute: 23 };
+    const CLEAR_TIME = { hour: 21, minute: 38 };
 
     const ZODIAC_DATA = [
         { name: "马", branch: "午" }, { name: "蛇", branch: "巳" },
