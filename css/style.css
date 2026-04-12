@@ -35,33 +35,44 @@ body {
     border-bottom: none;
 }
 
-.zodiac-info {
-    display: flex;
+.zodiac-header {
+    display: inline-flex;
     flex-direction: column;
     align-items: center;
     margin-right: 1rem;
     min-width: 3rem;
-}
-
-.zodiac-name-container {
-    text-align: center;
-}
-
-.zodiac-branch-container {
-    text-align: center;
-    margin-top: 0.2rem;
+    margin: 0;
+    padding: 0;
 }
 
 .zodiac-name {
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem;
+    margin: 0;
+    border-radius: 0;
+    font-family: monospace;
+    font-weight: bold;
+    font-size: 1.5rem;
+    transition: all 0.3s ease;
+    width: 3rem;
+    height: 3rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid white;
+    background: #f0f0f0;
     color: #333;
-    font-size: 1.1rem;
 }
 
 .zodiac-branch {
     font-size: 0.7rem;
-    color: #666;
+    margin-top: 0.2rem;
     font-weight: bold;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    color: #666;
 }
 
 .numbers-elements-container {
@@ -135,7 +146,7 @@ body {
 @media (max-width: 480px) {
     .container { padding: 1rem; }
     .number-badge { font-size: 1.2rem; width: 2.4rem; height: 2.4rem; padding: 0.6rem; margin: 0; }
-    .zodiac-name { font-size: 1rem; }
+    .zodiac-name { font-size: 1.2rem; width: 2.4rem; height: 2.4rem; padding: 0.6rem; margin: 0; }
 }
 
 .zodiac-name-red {

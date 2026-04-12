@@ -6,7 +6,7 @@
         DATA_CYCLE_DATE: 'dataCycleDate'   // 记录当前选中数据所属的周期起始时间
     };
 
-    const CLEAR_TIME = { hour: 21, minute: 38 };
+    const CLEAR_TIME = { hour: 10, minute: 23 };
 
     const ZODIAC_DATA = [
         { name: "马", branch: "午" }, { name: "蛇", branch: "巳" },
@@ -187,8 +187,20 @@
         for (let i = 0; i < ZODIAC_DATA.length; i++) {
             const { name: zodiac, branch } = ZODIAC_DATA[i];
             const numbers = zodiacNumbers.get(zodiac);
-            const hasSelected = numbers.some(num => currentSelected.includes(num));
-            const zodiacClass = hasSelected ? 'zodiac-name zodiac-name-red' : 'zodiac-name';
+            
+            // 检查生肖是否被选中
+            const isZodiacSelected = currentSelected.includes(zodiac);
+            // 检查该生肖是否有选中的号码
+            const hasSelectedNumber = numbers.some(num => currentSelected.includes(num));
+            
+            // 生肖样式
+            let zodiacClass = 'zodiac-name';
+            if (isZodiacSelected) {
+                zodiacClass += ' badge-black';
+            } else if (hasSelectedNumber) {
+                zodiacClass += ' zodiac-name-red';
+            }
+            
             let numbersHtml = '';
             for (let num of numbers) {
                 const badgeClass = getNumberBadgeClass(num);
@@ -202,14 +214,16 @@
                         <span class="element-label ${elementClass}">${element}</span>
                     </div>
                 `;
-            }
+            } 
             html += `
                 <div class="zodiac-row" data-zodiac="${zodiac}">
-                    <div class="zodiac-info">
-                        <div class="zodiac-name-container"><span class="${zodiacClass}">${zodiac}</span></div>
-                        <div class="zodiac-branch-container"><span class="zodiac-branch">${branch}</span></div>
+                    <div class="numbers-elements-container">
+                        <div class="zodiac-header">
+                            <span class="${zodiacClass}">${zodiac}</span>
+                            <span class="zodiac-branch">${branch}</span>
+                        </div>
+                        ${numbersHtml}
                     </div>
-                    <div class="numbers-elements-container">${numbersHtml}</div>
                 </div>
             `;
         }
@@ -220,20 +234,53 @@
         const container = document.getElementById('zodiacListContainer');
         if (!container) return;
         container.addEventListener('click', (e) => {
+            // 处理号码点击
             const badge = e.target.closest('.number-badge');
-            if (!badge) return;
-            const num = parseInt(badge.dataset.num);
-            const idx = currentSelected.indexOf(num);
-            if (idx === -1) currentSelected.push(num);
-            else currentSelected.splice(idx, 1);
-            saveSelectedToStorage();
-            updateDataCycleToCurrent();   // 数据变化，更新所属周期
-            badge.classList.toggle('badge-black');
-            let targetZodiac = null;
-            for (const [zodiac, numbers] of zodiacNumbers) {
-                if (numbers.includes(num)) { targetZodiac = zodiac; break; }
+            if (badge) {
+                const num = parseInt(badge.dataset.num);
+                const idx = currentSelected.indexOf(num);
+                if (idx === -1) currentSelected.push(num);
+                else currentSelected.splice(idx, 1);
+                saveSelectedToStorage();
+                updateDataCycleToCurrent();   // 数据变化，更新所属周期
+                badge.classList.toggle('badge-black');
+                let targetZodiac = null;
+                for (const [zodiac, numbers] of zodiacNumbers) {
+                    if (numbers.includes(num)) { targetZodiac = zodiac; break; }
+                }
+                if (targetZodiac) updateZodiacNameColor(targetZodiac);
+                return;
             }
-            if (targetZodiac) updateZodiacNameColor(targetZodiac);
+            
+            // 处理生肖点击
+            const zodiacName = e.target.closest('.zodiac-name');
+            if (zodiacName) {
+                const zodiac = zodiacName.textContent.trim();
+                
+                // 切换生肖的选中状态
+                zodiacName.classList.toggle('badge-black');
+                
+                // 检查生肖是否被选中
+                const isSelected = zodiacName.classList.contains('badge-black');
+                
+                // 保存生肖到本地存储
+                if (isSelected) {
+                    // 添加到选中列表
+                    if (!currentSelected.includes(zodiac)) {
+                        currentSelected.push(zodiac);
+                    }
+                } else {
+                    // 从选中列表中移除
+                    const idx = currentSelected.indexOf(zodiac);
+                    if (idx > -1) {
+                        currentSelected.splice(idx, 1);
+                    }
+                }
+                
+                // 保存到本地存储
+                saveSelectedToStorage();
+                updateDataCycleToCurrent();   // 数据变化，更新所属周期
+            }
         });
     }
 
